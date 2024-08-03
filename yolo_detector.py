@@ -1,9 +1,9 @@
 from ultralytics import YOLO
 from ultralytics.utils.plotting import Annotator, colors
-import cv2
+import cv2 as cv
 
 # Load YOLO model
-model = YOLO("yolov8a.pt")
+model = YOLO("yolov8n.pt")
 
 
 def draw_boxes(frame, boxes):
@@ -11,15 +11,20 @@ def draw_boxes(frame, boxes):
 
     # Create annotator object
     annotator = Annotator(frame)
+
     for box in boxes:
         class_id = box.cls
+        # print(f'Class ID : {class_id}\n')
         class_name = model.names[int(class_id)]
+        # print(f'Class Name : {class_name}\n')
         coordinator = box.xyxy[0]
+        # print(f'Coordinator : {coordinator}\n')
         confidence = box.conf
+        # print(f'Confidence : {confidence}')
 
     # Draw bounding box
     annotator.box_label(
-        box=coordinator, label=class_name, color=colors(class_id, True)
+        box=coordinator, label=class_name, color=(255, 0, 0)
     )
 
     return annotator.result()
@@ -28,12 +33,17 @@ def draw_boxes(frame, boxes):
 def detect_object(frame):
     """Detect object from image frame"""
 
+    # Detect only cat from class 15
+    cat_class = 15
+
     # Detect object from image frame
-    results = model.prediction(frame)
-
+    results = model.predict(frame, classes=cat_class, conf=0.95)
+    # print(f'---- results {results} ----')
     for result in results:
-    frame = draw_boxes(frame, result.boxes)
-
+        # print(f'---- result {result.boxes} ----')
+        if result.boxes.shape[0] != 0:
+            frame = draw_boxes(frame, result.boxes)
+        
     return frame
 
 
@@ -48,11 +58,13 @@ if __name__ == "__main__":
 
     while cap.isOpened():
         # Read image frame
-        ret, frame = cap.read_frame()
+        ret, frame = cap.read()
 
         if ret:
-            # Detect motorcycle from image frame
+            # Detect cat from image frame
             frame_result = detect_object(frame)
+
+            cv.putText(frame_result, 'Siwakorn-Clicknext-Internship-2024', (670, 40), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2) 
 
             # Write result to video
             video_writer.write(frame_result)
@@ -68,4 +80,4 @@ if __name__ == "__main__":
     # Release the VideoCapture object and close the window
     video_writer.release()
     cap.release()
-    cv2.destroyAllWindows()
+    cv.destroyAllWindows()
